@@ -204,6 +204,22 @@ Config.Wheel = {
 }
 
 ---------------------------------------------------------------------------
+-- INTERFAȚĂ (HUD) ȘI CAMERĂ
+---------------------------------------------------------------------------
+Config.UI = {
+	LeaderboardRows = 8, -- câte rânduri în clasamentul live
+	QueueRows = 8, -- câte persoane din coadă se văd pe ecran
+	FeedSize = 5, -- câte anunțuri simultan
+	FeedSeconds = 7, -- cât stă un anunț pe ecran
+	VerifyCodeSeconds = 25, -- cât stă pe ecran codul de verificare !verify
+	SpeedUnitFactor = 3, -- viteza afișată = studs/s x factor (40 studs/s => 120 km/h)
+	SpeedUnit = "km/h",
+	ShotSeconds = 7, -- camera schimbă unghiul la fiecare X secunde în cursă
+	FocusSeconds = 3, -- camera se uită la cine primește un boost
+	FinishCamDistance = 110, -- camera trece la linia de finish când liderul e la X studs de ea
+}
+
+---------------------------------------------------------------------------
 -- TRANSMISIE
 ---------------------------------------------------------------------------
 Config.Stream = {

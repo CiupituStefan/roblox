@@ -9,7 +9,7 @@
 	  * cine trece linia de finish (#1, #2...)
 	  * câștigătorul
 	  * panoul cu rezultate (podium cu pozele avatarurilor + restul clasamentului)
-	HUD-ul complet (clasament live, coadă, boost-uri, anunțuri) vine în Etapa 7.
+	Clasamentul live, coada și anunțurile sunt în HUD (Etapa 7).
 ]]
 
 local Players = game:GetService("Players")
@@ -24,7 +24,7 @@ local FONT = Enum.Font.FredokaOne
 local GOLD = Color3.fromRGB(255, 210, 60)
 local MEDALS = { "🥇", "🥈", "🥉" }
 
-local gui, center, subtitle, lobbyLabel, feed, results
+local gui, center, subtitle, lobbyLabel, results
 local SoundPlayer = { Play = function() end } -- înlocuit la Start
 local lobbyStartsAt = nil
 local token = 0
@@ -105,9 +105,6 @@ local function build()
 	}, gui)
 	new("UICorner", { CornerRadius = UDim.new(0.3, 0) }, lobbyLabel)
 
-	feed = new("Frame", { Name = "FinishFeed", AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(0.98, 0.2), Size = UDim2.fromScale(0.5, 0.3), BackgroundTransparency = 1 }, gui)
-	new("UIListLayout", { Padding = UDim.new(0.01, 0), HorizontalAlignment = Enum.HorizontalAlignment.Right, SortOrder = Enum.SortOrder.LayoutOrder }, feed)
-
 	results = new("Frame", {
 		Name = "Results",
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -120,29 +117,6 @@ local function build()
 	new("UICorner", { CornerRadius = UDim.new(0.05, 0) }, results)
 	new("UIStroke", { Thickness = 3, Color = GOLD }, results)
 	new("UISizeConstraint", { MaxSize = Vector2.new(720, 99999) }, results)
-end
-
-local function clearFeed()
-	for _, child in ipairs(feed:GetChildren()) do
-		if child:IsA("TextLabel") then
-			child:Destroy()
-		end
-	end
-end
-
-local function addFeed(text, order)
-	local label = new("TextLabel", {
-		LayoutOrder = order,
-		Size = UDim2.fromScale(1, 0.13),
-		BackgroundColor3 = Color3.fromRGB(30, 15, 60),
-		BackgroundTransparency = 0.25,
-		Font = FONT,
-		TextScaled = true,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		TextColor3 = order <= 3 and GOLD or Color3.new(1, 1, 1),
-		Text = text .. "  ",
-	}, feed)
-	new("UICorner", { CornerRadius = UDim.new(0.3, 0) }, label)
 end
 
 local function formatTime(seconds)
@@ -235,7 +209,6 @@ end
 function handlers.lineup(payload)
 	lobbyStartsAt = nil
 	token += 1
-	clearFeed()
 	results.Visible = false
 	pop(center, "🗺️ " .. (payload.mapName or ""), Color3.new(1, 1, 1), 3)
 	subtitle.Text = string.format("%d concurenți · roata mount-urilor urmează!", #payload.racers)
@@ -250,7 +223,6 @@ function handlers.countdown(payload)
 end
 
 function handlers.finish(payload)
-	addFeed(string.format("%s #%d %s  %s", MEDALS[payload.place] or "🏁", payload.place, payload.robloxName, formatTime(payload.time)), payload.place)
 	SoundPlayer.Play("Finish", payload.place == 1 and 1 or 0.6)
 	if payload.place == 1 then
 		token += 1
@@ -262,7 +234,6 @@ end
 function handlers.results(payload)
 	token += 1
 	center.Visible = false
-	clearFeed()
 	showResults(payload)
 end
 
@@ -270,7 +241,6 @@ function handlers.aborted()
 	token += 1
 	center.Visible = false
 	results.Visible = false
-	clearFeed()
 end
 
 function RaceUI.Start(soundPlayer)

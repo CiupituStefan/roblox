@@ -314,7 +314,7 @@ function RaceService:_runOneAsync()
 
 	raceState:Set(P.Racing, raceId)
 	raceState:OpenBoostWindow(raceId) -- pasul 13: DOAR acum se pot activa boost-uri
-	self:_event({ type = "go", raceId = raceId })
+	self:_event({ type = "go", raceId = raceId, startedAt = workspace:GetServerTimeNow() })
 	self.RaceStarted:Fire(current)
 
 	-- pașii 14-15: mișcare, clasament, finish
@@ -327,6 +327,11 @@ function RaceService:_runOneAsync()
 		local newlyFinished = controller:Step(dt)
 		controller:ApplyTransforms()
 		controller:Publish(dt)
+		-- timpul cursei pentru HUD (se oprește pe pauză), de 4 ori pe secundă
+		if controller.time - (current.lastTimePublish or -1) >= 0.25 then
+			current.lastTimePublish = controller.time
+			workspace:SetAttribute("RaceTime", math.floor(controller.time * 10) / 10)
+		end
 		for _, racer in ipairs(newlyFinished) do
 			local handle = current.byEntry[racer.entryId]
 			if handle then
@@ -445,6 +450,7 @@ function RaceService:_finishCleanup(current)
 	self._preRace:Cleanup(current.handles)
 	self._staging:SetConfetti(false)
 	workspace:SetAttribute("PodiumActive", false)
+	workspace:SetAttribute("RaceTime", nil)
 	self._queue:EndRace(current.raceId) -- NU sunt reintroduși în coadă
 	self._raceState:Set(P.Idle)
 	self._current = nil

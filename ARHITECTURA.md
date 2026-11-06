@@ -122,20 +122,18 @@ ServerScriptService
    └─ LocalSecrets          ModuleScript  cheia relay doar în Studio [Etapa 2 ✔]
 
 StarterPlayer/StarterPlayerScripts/Client  (Folder)
-├─ ClientMain           LocalScript   pornire client + cameră lobby  [Etapa 3 ✔, extins în 7]
+├─ ClientMain           LocalScript   pornește toate sistemele client [Etapa 7 ✔]
 ├─ MountAnimator        ModuleScript  animații mount + poza de călare [Etapa 3 ✔]
 ├─ WheelController      ModuleScript  roata norocului (UI din cod)   [Etapa 3 ✔]
 ├─ RaceUI               ModuleScript  countdown, finish, podium      [Etapa 5 ✔]
-├─ CameraDirector       ModuleScript  camera urmărește liderul       [Etapa 7]
+├─ CameraDirector       ModuleScript  regizorul camerei (unghiuri, focus, finish, podium) [Etapa 7 ✔]
+├─ HUD                  ModuleScript  clasament live, coadă, anunțuri [Etapa 7 ✔]
 ├─ AuraRenderer         ModuleScript  aura în 4 niveluri + fulgere   [Etapa 6 ✔]
 ├─ BoostFxRenderer      ModuleScript  efecte boost + text plutitor   [Etapa 6 ✔]
 └─ SoundPlayer          ModuleScript  sunete (Config.Sounds)         [Etapa 6 ✔]
 
 StarterGui
-├─ HUD                  ScreenGui     clasament, coadă, anunțuri (9:16) [Etapa 7]
-├─ Wheel                ScreenGui     roata mount-urilor             [Etapa 7]
-├─ Podium               ScreenGui     podium + câștigător            [Etapa 7]
-└─ AdminPanel           ScreenGui     vizibil doar pentru admin      [Etapa 8]
+└─ (gol) toate interfețele (HUD, roată, rezultate) sunt construite din cod de modulele client
 
 relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etapa 2 ✔]
 ├─ src/server.js        pornire
@@ -160,7 +158,7 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 | **4** | **6 hărți procedurale fără obstacole + TrackMath ✔** | Traseu continuu de la start la finish, lat, cu decor doar în afara pistei |
 | **5** | **RaceService: ciclul automat complet ✔** | Curse care se repetă singure, cu clasament și podium |
 | **6** | **Boost-uri + aura în 4 niveluri + VFX + sunete ✔** | Gift → boost doar pentru propriul personaj |
-| 7 | UI vertical 9:16 + camera de transmisie | Lizibil pe telefon |
+| **7** | **UI vertical 9:16 + camera de transmisie ✔** | Lizibil pe telefon |
 | 8 | Panou de administrare | Toate controalele din cerință |
 | 9 | Rezistență: test de încărcare (50 de concurenți, 20 de gift-uri/s), LIVE de mai multe ore | Fără scurgeri de memorie, reconectare relay |
 
