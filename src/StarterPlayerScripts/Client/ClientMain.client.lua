@@ -7,6 +7,7 @@
 
 	Etapa 3: animații mount + roata norocului.
 	Etapa 4: cameră care urmărește liderul pe traseu (sau lobby-ul între curse).
+	Etapa 5: countdown / finish / podium (RaceUI) + camera pe faze.
 	Etapa 7 va adăuga HUD-ul complet și regizorul de cameră.
 ]]
 
@@ -17,9 +18,11 @@ local RunService = game:GetService("RunService")
 local Client = script.Parent
 local MountAnimator = require(Client:WaitForChild("MountAnimator"))
 local WheelController = require(Client:WaitForChild("WheelController"))
+local RaceUI = require(Client:WaitForChild("RaceUI"))
 
 MountAnimator.Start()
 WheelController.Start()
+RaceUI.Start()
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
@@ -44,16 +47,33 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 	camera.CameraType = Enum.CameraType.Scriptable
 
+	local smooth = math.clamp(dt * 3, 0, 1)
+
+	-- podium: privește treptele din lobby
+	local lobbyModel = workspace:FindFirstChild("Lobby")
+	if workspace:GetAttribute("PodiumActive") and lobbyModel and lobbyModel:FindFirstChild("Podium1") then
+		local focus = lobbyModel.Podium1.Position + Vector3.new(0, 6, 0)
+		local wanted = CFrame.lookAt(focus + Vector3.new(math.sin(os.clock() * 0.3) * 8, 6, -34), focus)
+		camera.CFrame = camera.CFrame:Lerp(wanted, smooth)
+		return
+	end
+
 	local leader = findLeader()
 	if leader then
-		-- în spatele și deasupra liderului, privind înainte pe traseu
 		local cf = leader.PrimaryPart.CFrame
 		local flatLook = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
 		flatLook = flatLook.Magnitude > 1e-3 and flatLook.Unit or Vector3.new(0, 0, -1)
-		local eye = cf.Position - flatLook * 38 + Vector3.new(0, 18, 0)
-		local target = cf.Position + flatLook * 25 + Vector3.new(0, 3, 0)
-		local wanted = CFrame.lookAt(eye, target)
-		camera.CFrame = camera.CFrame:Lerp(wanted, math.clamp(dt * 3, 0, 1))
+		local wanted
+		if workspace:GetAttribute("RacePhase") == "Countdown" then
+			-- pe grilă: din fața concurenților, ca să se vadă avatarurile
+			local eye = cf.Position + flatLook * 45 + Vector3.new(0, 14, 0)
+			wanted = CFrame.lookAt(eye, cf.Position - flatLook * 8 + Vector3.new(0, 3, 0))
+		else
+			-- în cursă: în spatele și deasupra liderului, privind înainte pe traseu
+			local eye = cf.Position - flatLook * 38 + Vector3.new(0, 18, 0)
+			wanted = CFrame.lookAt(eye, cf.Position + flatLook * 25 + Vector3.new(0, 3, 0))
+		end
+		camera.CFrame = camera.CFrame:Lerp(wanted, smooth)
 		return
 	end
 

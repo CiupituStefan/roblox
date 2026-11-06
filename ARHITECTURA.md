@@ -109,21 +109,23 @@ ServerScriptService
    │  ├─ Maps/MapBuilder      pistă, borduri, start/finish, decor    [Etapa 4 ✔]
    │  ├─ Maps/MapLayouts      punctele de control ale celor 6 trasee [Etapa 4 ✔]
    │  ├─ Maps/Themes          culori, lumină, decoruri per temă      [Etapa 4 ✔]
-   │  ├─ RaceService          ciclu automat complet (23 pași)        [Etapa 5]
-   │  ├─ RacerController      mișcare pe spline, clasament           [Etapa 5]
+   │  ├─ RaceService          ciclu automat complet (23 pași)        [Etapa 5 ✔]
+   │  ├─ RacerController      mișcare pe spline, clasament, finish   [Etapa 5 ✔]
    │  ├─ BoostService         validare + aplicare boost-uri          [Etapa 6]
    │  └─ AdminService         comenzi admin validate                 [Etapa 8]
    └─ Tests/
       ├─ QueueService.spec    ModuleScript  teste automate           [Etapa 1 ✔]
       ├─ GiftRouter.spec      ModuleScript  teste donații            [Etapa 2 ✔]
       ├─ Mounts.spec          ModuleScript  teste mount-uri          [Etapa 3 ✔]
-      └─ Maps.spec            ModuleScript  teste trasee             [Etapa 4 ✔]
+      ├─ Maps.spec            ModuleScript  teste trasee             [Etapa 4 ✔]
+      └─ RacerController.spec ModuleScript  teste simulare cursă     [Etapa 5 ✔]
    └─ LocalSecrets          ModuleScript  cheia relay doar în Studio [Etapa 2 ✔]
 
 StarterPlayer/StarterPlayerScripts/Client  (Folder)
 ├─ ClientMain           LocalScript   pornire client + cameră lobby  [Etapa 3 ✔, extins în 7]
 ├─ MountAnimator        ModuleScript  animații mount + poza de călare [Etapa 3 ✔]
 ├─ WheelController      ModuleScript  roata norocului (UI din cod)   [Etapa 3 ✔]
+├─ RaceUI               ModuleScript  countdown, finish, podium      [Etapa 5 ✔]
 ├─ CameraDirector       ModuleScript  camera urmărește liderul       [Etapa 7]
 ├─ AuraRenderer         ModuleScript  aura (interpolare culoare/mărime) [Etapa 6]
 └─ BoostFxRenderer      ModuleScript  efecte boost                   [Etapa 6]
@@ -155,7 +157,7 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 | **2** | **Relay Node.js + BridgeService + GiftRouter ✔** | Un `!join` real din LIVE apare în coadă; gift-urile ajung în joc |
 | **3** | **Avatar R15 + 16 mount-uri procedurale + roata norocului ✔** | Avatarul original stă pe mount, cu animație |
 | **4** | **6 hărți procedurale fără obstacole + TrackMath ✔** | Traseu continuu de la start la finish, lat, cu decor doar în afara pistei |
-| 5 | RaceService: ciclul automat complet | Curse care se repetă singure, cu clasament și podium |
+| **5** | **RaceService: ciclul automat complet ✔** | Curse care se repetă singure, cu clasament și podium |
 | 6 | Boost-uri + aura în 4 niveluri + VFX + sunete | Gift → boost doar pentru propriul personaj |
 | 7 | UI vertical 9:16 + camera de transmisie | Lizibil pe telefon |
 | 8 | Panou de administrare | Toate controalele din cerință |

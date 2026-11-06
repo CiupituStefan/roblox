@@ -25,10 +25,12 @@ Config.Race = {
 	SpeedNoisePercent = 4,
 	MaxSpeedMultiplier = 4.0, -- plafon de siguranță pentru boost-uri cumulate
 	LobbyWaitSeconds = 15, -- cât se așteaptă înscrieri înainte de start
+	GridHoldSeconds = 2, -- concurenții stau pe grilă înainte de countdown
 	CountdownSeconds = 3,
+	FinishGraceSeconds = 8, -- după câștigător, ceilalți mai au atâtea secunde să termine
 	PodiumSeconds = 10,
 	MaxRaceSeconds = 180, -- siguranță: cursa se încheie forțat după acest timp
-	AutoLoop = true, -- ciclul de curse pornește automat
+	AutoLoop = true, -- ciclul de curse pornește automat la pornirea serverului
 }
 
 ---------------------------------------------------------------------------
@@ -227,9 +229,7 @@ Config.Debug = {
 	VerboseLogs = true,
 	-- Etapa 2: pornește o „cursă de test” în Studio (fără mișcare) ca să poți testa
 	-- gift-urile din simulator. Va fi înlocuită de RaceService în Etapa 5.
-	StartTestRaceInStudio = true, -- ciclu de test: lobby -> roată -> „cursă” pe loc
-	TestRaceSeconds = 75, -- durata maximă a cursei de test (se oprește la primul finish)
-	ForceMap = nil, -- ex. "NeonCity": cursele de test folosesc mereu această hartă
+	ForceMap = nil, -- ex. "NeonCity": cursele folosesc mereu această hartă (teste)
 }
 
 return Config
