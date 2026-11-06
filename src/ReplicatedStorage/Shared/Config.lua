@@ -184,6 +184,11 @@ Config.Maps = {
 		{ Id = "SpaceStation", DisplayName = "Stația Spațială", Enabled = true },
 	},
 	TrackWidth = 70, -- lățimea pistei în studs (suficient de lată pentru 12+ concurenți)
+	TargetTrackLength = 2000, -- lungimea traseului (la viteza de bază 40 => ~50s de cursă)
+	GridPerRow = 6, -- câți concurenți pe un rând la start
+	GridRowSpacing = 13, -- distanța dintre rânduri
+	FinishMargin = 40, -- linia de finish este cu atâția studs înainte de capătul pistei
+	DecorDensity = 1.0, -- 0.5 = jumătate din decoruri (pentru PC-uri slabe), 2 = dublu
 }
 
 ---------------------------------------------------------------------------
@@ -223,7 +228,8 @@ Config.Debug = {
 	-- Etapa 2: pornește o „cursă de test” în Studio (fără mișcare) ca să poți testa
 	-- gift-urile din simulator. Va fi înlocuită de RaceService în Etapa 5.
 	StartTestRaceInStudio = true, -- ciclu de test: lobby -> roată -> „cursă” pe loc
-	TestRaceSeconds = 40,
+	TestRaceSeconds = 75, -- durata maximă a cursei de test (se oprește la primul finish)
+	ForceMap = nil, -- ex. "NeonCity": cursele de test folosesc mereu această hartă
 }
 
 return Config

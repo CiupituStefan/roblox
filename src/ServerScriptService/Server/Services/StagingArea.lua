@@ -10,7 +10,7 @@
 local StagingArea = {}
 StagingArea.__index = StagingArea
 
-local ORIGIN = Vector3.new(0, 0, -400) -- departe de hărți
+local ORIGIN = Vector3.new(0, 0, -2600) -- departe de hărți (traseele ocupă ~[-700,1100] x [-700,600])
 local PER_ROW = 6
 local SPACING_X = 11
 local SPACING_Z = 15

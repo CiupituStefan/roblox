@@ -77,7 +77,7 @@ ReplicatedStorage
 │  ├─ Signal            ModuleScript  evenimente interne              [Etapa 1 ✔]
 │  ├─ Validation        ModuleScript  validare username/ID/text       [Etapa 1 ✔]
 │  ├─ Remotes           ModuleScript  creează/găsește remotes         [Etapa 1 ✔]
-│  ├─ TrackMath         ModuleScript  spline, distanță → CFrame       [Etapa 4]
+│  ├─ TrackMath         ModuleScript  spline, distanță → CFrame       [Etapa 4 ✔]
 │  └─ AuraMath          ModuleScript  nivel aură după viteză          [Etapa 6]
 ├─ Remotes/             (Folder, creat automat de server)
 └─ Assets/
@@ -105,8 +105,10 @@ ServerScriptService
    │  ├─ MountPicker          alegere aleatorie ponderată            [Etapa 3 ✔]
    │  ├─ StagingArea          lobby-ul cu sloturi                    [Etapa 3 ✔]
    │  ├─ PreRaceService       avatare + roata norocului (server decide) [Etapa 3 ✔]
-   │  ├─ MapService           rotație hărți, încărcare/descărcare    [Etapa 4]
-   │  ├─ MapBuilder           6 hărți tematice procedurale           [Etapa 4]
+   │  ├─ MapService           rotație hărți, încărcare, grilă start  [Etapa 4 ✔]
+   │  ├─ Maps/MapBuilder      pistă, borduri, start/finish, decor    [Etapa 4 ✔]
+   │  ├─ Maps/MapLayouts      punctele de control ale celor 6 trasee [Etapa 4 ✔]
+   │  ├─ Maps/Themes          culori, lumină, decoruri per temă      [Etapa 4 ✔]
    │  ├─ RaceService          ciclu automat complet (23 pași)        [Etapa 5]
    │  ├─ RacerController      mișcare pe spline, clasament           [Etapa 5]
    │  ├─ BoostService         validare + aplicare boost-uri          [Etapa 6]
@@ -114,7 +116,8 @@ ServerScriptService
    └─ Tests/
       ├─ QueueService.spec    ModuleScript  teste automate           [Etapa 1 ✔]
       ├─ GiftRouter.spec      ModuleScript  teste donații            [Etapa 2 ✔]
-      └─ Mounts.spec          ModuleScript  teste mount-uri          [Etapa 3 ✔]
+      ├─ Mounts.spec          ModuleScript  teste mount-uri          [Etapa 3 ✔]
+      └─ Maps.spec            ModuleScript  teste trasee             [Etapa 4 ✔]
    └─ LocalSecrets          ModuleScript  cheia relay doar în Studio [Etapa 2 ✔]
 
 StarterPlayer/StarterPlayerScripts/Client  (Folder)
@@ -151,7 +154,7 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 | **1** | **Fundație: Config, Remotes, Queue, identificare Roblox, înscriere ✔** | Teste automate trec; înscrieri simulate cu conturi reale apar în coadă |
 | **2** | **Relay Node.js + BridgeService + GiftRouter ✔** | Un `!join` real din LIVE apare în coadă; gift-urile ajung în joc |
 | **3** | **Avatar R15 + 16 mount-uri procedurale + roata norocului ✔** | Avatarul original stă pe mount, cu animație |
-| 4 | 6 hărți procedurale fără obstacole + TrackMath | Traseu închis, lat, cu decor în afara pistei |
+| **4** | **6 hărți procedurale fără obstacole + TrackMath ✔** | Traseu continuu de la start la finish, lat, cu decor doar în afara pistei |
 | 5 | RaceService: ciclul automat complet | Curse care se repetă singure, cu clasament și podium |
 | 6 | Boost-uri + aura în 4 niveluri + VFX + sunete | Gift → boost doar pentru propriul personaj |
 | 7 | UI vertical 9:16 + camera de transmisie | Lizibil pe telefon |

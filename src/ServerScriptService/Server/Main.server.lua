@@ -8,6 +8,7 @@
 	Etapa 1: Queue + identificare Roblox + înscriere
 	Etapa 2: BridgeService (relay TikTok) + GiftRouter + RaceState
 	Etapa 3: AvatarService + MountFactory + PreRaceService (roata norocului)
+	Etapa 4: MapService + MapBuilder + TrackMath (6 hărți, start/finish, grilă)
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,6 +31,7 @@ local AvatarService = require(Services:WaitForChild("AvatarService"))
 local MountFactory = require(Services:WaitForChild("MountFactory"))
 local StagingArea = require(Services:WaitForChild("StagingArea"))
 local PreRaceService = require(Services:WaitForChild("PreRaceService"))
+local MapService = require(Services:WaitForChild("MapService"))
 
 local Players = game:GetService("Players")
 -- Streamerul nu are personaj: clientul lui este doar camera transmisă pe TikTok.
@@ -46,7 +48,7 @@ end
 ---------------------------------------------------------------------------
 if RunService:IsStudio() and Config.Debug.RunSelfTests then
 	local tests = Server:FindFirstChild("Tests")
-	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec" }) do
+	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec", "Maps.spec" }) do
 		local module = tests and tests:FindFirstChild(specName)
 		if module then
 			local ok, err = pcall(function()
@@ -94,6 +96,7 @@ for _, err in ipairs(mountErrors) do
 end
 
 local staging = StagingArea.new()
+local maps = MapService.new({ config = Config })
 local avatars = AvatarService.new({ users = RobloxUserService })
 local preRace = PreRaceService.new({
 	config = Config,
@@ -119,6 +122,7 @@ local App = {
 	Avatars = avatars,
 	Staging = staging,
 	PreRace = preRace,
+	Maps = maps,
 }
 
 ---------------------------------------------------------------------------
@@ -344,46 +348,137 @@ preRace.Mounted:Connect(function(handle, reveal)
 end)
 
 --[[
-	Ciclu de test (Studio): coadă -> lobby (avatare originale) -> roata
-	mount-urilor -> „cursă” pe loc (animații la viteza de bază, fereastra de
-	boost-uri deschisă pentru simulatorul relay-ului) -> curățare.
-	Va fi înlocuit de RaceService (cu traseu și mișcare reală) în Etapa 5.
+	Ciclu de test (Studio): hartă nouă + coadă -> lobby (avatare originale) ->
+	roata mount-urilor -> grila de start -> deplasare de previzualizare pe traseu
+	la viteza de bază (fereastra de boost-uri deschisă pentru simulator) ->
+	primul la finish câștigă -> curățare. Harta se schimbă la fiecare ciclu.
+	Va fi înlocuit de RaceService (countdown, clasament, podium, boost-uri) în Etapa 5.
 	    npm run sim -- gift 900000001 Rose   -> boost pentru concurentul 1
 ]]
+local function previewDriveAsync(raceId, handles, map)
+	local grid = map.GetGrid(#handles)
+	local racers = {}
+	local rng = Random.new()
+	for i, handle in ipairs(handles) do
+		if handle.mount then
+			local slot = grid[i]
+			handle.mount.PrimaryPart.CFrame = slot.cframe
+			handle.model:SetAttribute("OnTrack", true)
+			handle.model:SetAttribute("Distance", slot.distance)
+			handle.model:SetAttribute("Lane", slot.lateral)
+			table.insert(racers, {
+				handle = handle,
+				root = handle.mount.PrimaryPart,
+				distance = slot.distance,
+				lateral = slot.lateral,
+				phase = rng:NextNumber(0, math.pi * 2),
+				freq = rng:NextNumber(0.4, 0.9),
+			})
+		end
+	end
+	if #racers == 0 then
+		return nil
+	end
+
+	task.wait(3) -- pe grilă (countdown-ul real vine în Etapa 5)
+	raceState:Set(RaceState.Phases.Racing, raceId)
+	raceState:OpenBoostWindow(raceId)
+
+	local base = Config.Race.BaseSpeed
+	local noise = Config.Race.SpeedNoisePercent / 100
+	local finishDistance = map.finishDistance
+	local winner = nil
+	local clock = 0
+	local lastAttributes = 0
+	local connection = RunService.Heartbeat:Connect(function(dt)
+		clock += dt
+		local publish = clock - lastAttributes >= 0.1
+		if publish then
+			lastAttributes = clock
+		end
+		for _, r in ipairs(racers) do
+			-- variație simetrică (media 0): nimeni nu e avantajat pe termen lung
+			local speed = base * (1 + noise * math.sin(clock * r.freq + r.phase))
+			r.distance += speed * dt
+			r.root.CFrame = map.track:CFrameAt(r.distance, r.lateral)
+			if publish then
+				r.handle.model:SetAttribute("Speed", speed)
+				r.handle.model:SetAttribute("Distance", r.distance)
+			end
+			if not winner and r.distance >= finishDistance then
+				winner = r.handle
+			end
+		end
+	end)
+
+	local started = os.clock()
+	while not winner and os.clock() - started < Config.Debug.TestRaceSeconds do
+		task.wait(0.2)
+	end
+	connection:Disconnect()
+	for _, r in ipairs(racers) do
+		r.handle.model:SetAttribute("Speed", 0)
+	end
+	return winner
+end
+
 local function runTestRaceAsync()
+	if queue:GetQueuedCount() == 0 then
+		return false
+	end
 	local raceId, racers = queue:TakeForRace(Config.Race.MaxRacers)
 	if not raceId then
 		return false
 	end
-	log(string.format("🏁 Cursă de test #%d: %d concurenți, încarc avatarurile...", raceId, #racers))
+	log(string.format("🏁 Cursă de test #%d: %d concurenți, încarc avatarurile și harta...", raceId, #racers))
 	raceState:Set(RaceState.Phases.Lobby, raceId)
 
+	-- harta se construiește în paralel cu încărcarea avatarurilor
+	local map, mapErr
+	local mapDone = false
+	task.spawn(function()
+		local ok, result, err = pcall(function()
+			return maps:LoadAsync(Config.Debug.ForceMap or maps:ChooseNextId())
+		end)
+		if ok then
+			map, mapErr = result, err
+		else
+			mapErr = result
+		end
+		mapDone = true
+	end)
+
 	local handles = preRace:PrepareAsync(raceId, racers)
-	if #handles == 0 then
-		warn("[Main] Niciun avatar încărcat, cursa se anulează")
+	while not mapDone do
+		task.wait(0.1)
+	end
+	if not map then
+		warn("[Main] Harta nu s-a putut încărca:", mapErr)
+	end
+	if #handles == 0 or not map then
+		preRace:Cleanup(handles)
 		queue:EndRace(raceId)
 		raceState:Set(RaceState.Phases.Idle)
 		return true
 	end
+	announce("map", "🗺️ Harta: " .. map.displayName)
 
 	raceState:Set(RaceState.Phases.Wheel, raceId)
 	preRace:RunWheelAsync(raceId, handles)
 
-	raceState:Set(RaceState.Phases.Racing, raceId)
-	raceState:OpenBoostWindow(raceId)
 	for _, handle in ipairs(handles) do
-		handle.model:SetAttribute("Speed", Config.Race.BaseSpeed) -- animații „pe loc”
 		log(string.format("    %s  <- gift-urile contului TikTok %s", handle.entry.robloxName, handle.entry.tiktokUserId))
 	end
-	log(string.format("🏁 Fereastra de boost-uri DESCHISĂ %ds", Config.Debug.TestRaceSeconds))
-	task.wait(Config.Debug.TestRaceSeconds)
-
+	local winner = previewDriveAsync(raceId, handles, map)
 	raceState:Set(RaceState.Phases.Finished, raceId)
-	task.wait(2)
+	if winner then
+		announce("winner", "🏆 " .. winner.entry.robloxName .. " a câștigat pe " .. map.displayName .. "!", { robloxUserId = winner.entry.robloxUserId })
+	end
+	task.wait(4)
 	preRace:Cleanup(handles)
 	queue:EndRace(raceId)
 	raceState:Set(RaceState.Phases.Idle)
-	log("🏁 Cursa de test s-a încheiat; participanții NU au fost reintroduși în coadă.")
+	log("🏁 Cursa de test s-a încheiat; participanții NU au fost reintroduși în coadă. Următoarea cursă = hartă nouă.")
 	return true
 end
 
@@ -406,4 +501,4 @@ if RunService:IsStudio() and Config.Debug.StartTestRaceInStudio then
 	end)
 end
 
-log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())
+log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())
