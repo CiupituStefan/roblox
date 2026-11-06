@@ -11,6 +11,8 @@
 	Etapa 4: MapService + MapBuilder + TrackMath (6 hărți, start/finish, grilă)
 	Etapa 5: RaceService + RacerController (ciclul automat complet al curselor)
 	Etapa 6: BoostService (cooldown + coadă) + efecte/aură/sunete pe client
+	Etapa 7: HUD + regizorul camerei (client)
+	Etapa 8: SettingsService (listă albă + salvare) + AdminService + panou admin
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,6 +38,8 @@ local PreRaceService = require(Services:WaitForChild("PreRaceService"))
 local MapService = require(Services:WaitForChild("MapService"))
 local RaceService = require(Services:WaitForChild("RaceService"))
 local BoostService = require(Services:WaitForChild("BoostService"))
+local SettingsService = require(Services:WaitForChild("SettingsService"))
+local AdminService = require(Services:WaitForChild("AdminService"))
 
 local Players = game:GetService("Players")
 -- Streamerul nu are personaj: clientul lui este doar camera transmisă pe TikTok.
@@ -52,7 +56,7 @@ end
 ---------------------------------------------------------------------------
 if RunService:IsStudio() and Config.Debug.RunSelfTests then
 	local tests = Server:FindFirstChild("Tests")
-	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec", "Maps.spec", "RacerController.spec", "BoostService.spec" }) do
+	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec", "Maps.spec", "RacerController.spec", "BoostService.spec", "Settings.spec" }) do
 		local module = tests and tests:FindFirstChild(specName)
 		if module then
 			local ok, err = pcall(function()
@@ -99,6 +103,23 @@ for _, err in ipairs(mountErrors) do
 	warn("[Main] Mount:", err)
 end
 
+local settings = SettingsService.new({
+	config = Config,
+	remotes = Remotes,
+	persist = Config.Admin.PersistSettings,
+})
+settings.Changed:Connect(function(path, value)
+	if path == "Queue.MaxSize" then
+		queue:SetMaxSize(value)
+	elseif path == "Queue.SkipCreditTTLSeconds" then
+		queue:SetSkipCreditTTL(value)
+	end
+end)
+local loadedSettings = settings:LoadSavedAsync()
+if loadedSettings > 0 then
+	print(string.format("[Main] %d setări salvate din panoul de admin au fost reîncărcate", loadedSettings))
+end
+
 local staging = StagingArea.new()
 local maps = MapService.new({ config = Config })
 local avatars = AvatarService.new({ users = RobloxUserService })
@@ -142,6 +163,7 @@ local function buildState()
 		race = raceState:Snapshot(),
 		bridge = ReplicatedStorage:GetAttribute("BridgeStatus"),
 		serverTime = workspace:GetServerTimeNow(),
+		config = settings:GetOverrides(), -- clientul aplică aceleași setări
 	}
 end
 
@@ -420,8 +442,25 @@ raceService.RaceFinished:Connect(function(current, results)
 	end
 end)
 
+---------------------------------------------------------------------------
+-- 9) Panoul de administrare
+---------------------------------------------------------------------------
+local admin = AdminService.new({
+	config = Config,
+	remotes = Remotes,
+	queue = queue,
+	registration = registration,
+	race = raceService,
+	maps = maps,
+	settings = settings,
+	log = print,
+})
+admin:Start()
+App.Settings = settings
+App.Admin = admin
+
 if Config.Race.AutoLoop then
 	raceService:Start()
 end
 
-log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate), 6 (Boost-uri + Aură). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())
+log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate), 6 (Boost-uri + Aură), 7 (HUD), 8 (Admin). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())

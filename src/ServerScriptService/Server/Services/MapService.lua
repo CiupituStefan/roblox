@@ -200,6 +200,10 @@ function MapService:SetNext(mapId)
 	self._overrideNext = mapId
 end
 
+function MapService:GetNextOverride()
+	return self._overrideNext
+end
+
 function MapService:ChooseNextId()
 	if self._overrideNext then
 		local id = self._overrideNext

@@ -21,7 +21,8 @@ local EVENTS = {
 	"RaceEvent", -- server -> clienți: start, countdown, finish, podium (Etapa 5)
 	"BoostFx", -- server -> clienți: efecte vizuale boost/aură (Etapa 6)
 	"AdminCommand", -- client (admin) -> server: comenzi panou admin (validate pe server)
-	"AdminResult", -- server -> client admin: răspuns la comandă
+	"AdminResult", -- server -> client admin: răspuns la comandă + starea panoului
+	"ConfigSync", -- server -> clienți: setări modificate din panoul de admin
 }
 
 local FUNCTIONS = {

@@ -265,6 +265,37 @@ function QueueService:RemoveQueued(entryId)
 	return true, copyEntry(entry)
 end
 
+function QueueService:FindQueuedByRobloxName(robloxName)
+	local wanted = string.lower(robloxName or "")
+	for _, list in ipairs({ self._priority, self._normal }) do
+		for _, entryId in ipairs(list) do
+			local entry = self._entries[entryId]
+			if string.lower(entry.robloxName) == wanted then
+				return copyEntry(entry)
+			end
+		end
+	end
+	return nil
+end
+
+-- Admin: golește coada de așteptare (cursa activă nu este afectată)
+function QueueService:ClearQueued()
+	local removed = 0
+	for _, list in ipairs({ self._priority, self._normal }) do
+		for _, entryId in ipairs(list) do
+			self:_deleteEntry(entryId)
+			removed += 1
+		end
+		table.clear(list)
+	end
+	self.Changed:Fire("clear")
+	return removed
+end
+
+function QueueService:SetSkipCreditTTL(seconds)
+	self._skipCreditTTL = seconds
+end
+
 function QueueService:RemoveQueuedByRobloxName(robloxName)
 	local wanted = string.lower(robloxName or "")
 	for _, list in ipairs({ self._priority, self._normal }) do

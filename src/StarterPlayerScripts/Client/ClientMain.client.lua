@@ -33,3 +33,4 @@ start("HUD", SoundPlayer)
 start("AuraRenderer", SoundPlayer)
 start("BoostFxRenderer", SoundPlayer)
 start("CameraDirector")
+task.spawn(start, "AdminPanel") -- așteaptă confirmarea de admin de la server

@@ -271,6 +271,11 @@ Config.Admin = {
 	UserIds = {
 		-- 123456789,
 	},
+	GroupMinRank = 255, -- dacă jocul e al unui grup: rangul minim pentru admin (255 = proprietar)
+	AllowAllInStudio = true, -- în Studio oricine e admin (pentru teste)
+	PersistSettings = true, -- modificările din panou se păstrează și după repornirea serverului (DataStore)
+	PanelHotkey = Enum.KeyCode.F2, -- tasta care arată/ascunde panoul
+	ShowToggleButton = true, -- butonul ⚙️ mic din colț (ascunde-l dacă panoul apare pe stream)
 }
 
 ---------------------------------------------------------------------------

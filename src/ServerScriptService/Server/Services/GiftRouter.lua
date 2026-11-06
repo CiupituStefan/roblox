@@ -53,8 +53,10 @@ end
 -- Găsește recompensa pentru un gift: ById -> ByName (fără diferențe de majuscule) -> ByCoins
 function GiftRouter:ResolveReward(gift)
 	local cfg = self._config.Gifts
-	if gift.id and cfg.ById[gift.id] then
-		return cfg.ById[gift.id]
+	-- cheile pot fi numere (Config) sau text (adăugate din panoul de admin)
+	local byId = gift.id and (cfg.ById[gift.id] or cfg.ById[tostring(gift.id)])
+	if byId then
+		return byId
 	end
 	local wanted = string.lower(gift.name or "")
 	if wanted ~= "" then
