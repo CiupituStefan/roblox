@@ -1,0 +1,33 @@
+{
+  "name": "TikTokRace",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/ReplicatedStorage/Shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/ServerScriptService/Server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/StarterPlayerScripts/Client"
+        }
+      }
+    },
+    "HttpService": {
+      "$properties": {
+        "HttpEnabled": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      }
+    }
+  }
+}
