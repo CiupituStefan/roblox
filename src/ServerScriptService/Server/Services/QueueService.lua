@@ -201,6 +201,7 @@ function QueueService:Enqueue(req)
 		lane = "normal",
 		enqueuedAt = self._now(),
 		raceId = nil,
+		isTest = req.isTest == true, -- participant generat de testul de încărcare
 	}
 
 	if self._skipCredits[req.tiktokUserId] then

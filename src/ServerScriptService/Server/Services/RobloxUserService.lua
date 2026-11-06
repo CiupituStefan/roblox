@@ -249,6 +249,27 @@ function RobloxUserService.GetHeadshotImage(userId, size)
 	return string.format("rbxthumb://type=AvatarHeadShot&id=%d&w=%d&h=%d", userId, size, size)
 end
 
+-- Curăță intrările expirate și limitează mărimea cache-ului (LIVE-uri de ore întregi).
+function RobloxUserService.Prune(maxEntries)
+	maxEntries = maxEntries or 2000
+	local now = os.clock()
+	local function prune(cache)
+		local count = 0
+		for key, item in pairs(cache) do
+			if item.expires <= now then
+				cache[key] = nil
+			else
+				count += 1
+			end
+		end
+		if count > maxEntries then
+			table.clear(cache) -- foarte rar: e mai simplu să pornim de la zero
+		end
+	end
+	prune(nameCache)
+	prune(descCache)
+end
+
 function RobloxUserService.ClearCache()
 	table.clear(nameCache)
 	table.clear(descCache)

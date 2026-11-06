@@ -4,6 +4,7 @@ Joc de curse haotic pentru TikTok LIVE: spectatorii se înscriu cu username-ul R
 prin chat (`!join Nume`), apar în joc cu **avatarul lor original**, primesc un mount
 aleatoriu de la roata norocului și își pot accelera **doar propriul personaj** prin gift-uri.
 
+- **Ghidul complet pentru LIVE (start aici):** [`docs/GHID_LIVE.md`](docs/GHID_LIVE.md)
 - Arhitectura completă și etapele: [`ARHITECTURA.md`](ARHITECTURA.md)
 - Relay-ul TikTok → Roblox (Node.js): [`relay/README.md`](relay/README.md)
 

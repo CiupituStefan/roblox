@@ -50,6 +50,14 @@ npm i tiktok-live-connector
 ```bash
 npm start
 ```
+Pentru LIVE folosește varianta cu repornire automată (dacă relay-ul se oprește, pornește din nou singur):
+```bash
+npm run start:live
+```
+Test de încărcare (fără TikTok/Roblox; verifică pierderi, duplicate, întârziere, memorie):
+```bash
+npm run loadtest
+```
 Trebuie să vezi `[relay] ascultă pe http://localhost:8787` și apoi `[tikfinity] conectat ...`.
 
 ## 4. Adresă HTTPS publică (Roblox trebuie să poată ajunge la relay)
@@ -72,7 +80,8 @@ Verificare: deschide `https://adresa-ta/health` în browser → `{"ok":true}`.
    - Secret: aceeași valoare ca `RELAY_KEY`
    - Domain: `*.trycloudflare.com` (sau domeniul tău)
 3. **Doar pentru Studio**, dacă secretul nu e disponibil acolo: pune cheia în `ServerScriptService > Server > LocalSecrets`. Golește câmpul înainte de LIVE.
-4. `Config.Bridge.BaseUrl` = adresa HTTPS de la pasul 4.
+4. `Config.Bridge.BaseUrl` = adresa HTTPS de la pasul 4. Adresa se poate schimba și din panoul de admin
+   (Control → Relay TikTok), fără să republici jocul.
 
 În Output trebuie să apară `[BridgeService] status: connected`.
 

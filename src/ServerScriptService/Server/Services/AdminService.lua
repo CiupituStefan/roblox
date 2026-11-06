@@ -12,7 +12,7 @@
 
 	Comenzi (Remotes.AdminCommand:FireServer(command, args)):
 	  state                                  -> doar trimite starea
-	  race.start | race.stop | race.pause | race.resume | race.abort
+	  race.start | race.stop | race.pause | race.resume | race.abort | race.restart
 	  set { path, value }                    -> modifică o setare (listă albă)
 	  queue.add { robloxName }               -> adaugă manual în coadă
 	  queue.remove { robloxName }            -> scoate din coadă
@@ -21,6 +21,7 @@
 	  queue.registration { open }            -> deschide/închide înscrierile
 	  map.next { mapId }                     -> harta următoarei curse
 	  settings.reset                         -> uită setările salvate
+	  debug.loadtest { racers, giftsPerSecond, seconds } -> test de încărcare (Studio)
 ]]
 
 local Players = game:GetService("Players")
@@ -139,6 +140,7 @@ function AdminService:BuildState()
 		currentMap = workspace:GetAttribute("CurrentMapName"),
 		nextMap = self._maps:GetNextOverride(),
 		bridge = ReplicatedStorage:GetAttribute("BridgeStatus"),
+		bridgeUrl = config.Bridge.BaseUrl,
 		registrationOpen = self._queue:IsRegistrationOpen(),
 		queue = self._queue:GetSnapshot(60),
 		settings = settings,
@@ -149,6 +151,11 @@ function AdminService:BuildState()
 		mounts = mounts,
 		maps = maps,
 		savedCount = savedCount,
+		health = self._health and self._health:GetStats() or nil,
+		raceStats = race:GetStats(),
+		loadTestRunning = self._loadTester and self._loadTester.running or false,
+		lastLoadTest = self._loadTester and self._loadTester.lastReport or nil,
+		isStudio = RunService:IsStudio(),
 	}
 end
 
@@ -185,6 +192,34 @@ end
 COMMANDS["race.resume"] = function(self)
 	self._race:SetPaused(false)
 	return true, "Reluat"
+end
+
+COMMANDS["race.restart"] = function(self)
+	self._race:Restart()
+	return true, "Ciclul de curse a fost repornit"
+end
+
+COMMANDS["debug.loadtest"] = function(self, args)
+	if not self._loadTester then
+		return false, "Testul de încărcare nu este disponibil"
+	end
+	if not RunService:IsStudio() and not self._config.Debug.AllowLoadTestLive then
+		return false, "Testul de încărcare e permis doar în Studio (Config.Debug.AllowLoadTestLive)"
+	end
+	if self._loadTester.running then
+		return false, "Un test rulează deja"
+	end
+	args = type(args) == "table" and args or {}
+	local opts = {
+		racers = tonumber(args.racers) or 40,
+		giftsPerSecond = tonumber(args.giftsPerSecond) or 20,
+		seconds = tonumber(args.seconds) or 45,
+	}
+	task.spawn(function()
+		local _, text = self._loadTester:RunAsync(opts)
+		self._log("[Admin] Test de încărcare terminat: " .. tostring(text))
+	end)
+	return true, string.format("Test pornit: %d concurenți, %d gift-uri/s, %ds (rezultatul apare în Output și aici)", opts.racers, opts.giftsPerSecond, opts.seconds)
 end
 
 COMMANDS["race.abort"] = function(self)

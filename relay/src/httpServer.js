@@ -9,7 +9,7 @@ const MAX_BODY = 16 * 1024;
 
 const digest = (s) => createHash('sha256').update(String(s)).digest();
 
-export function createRelayServer({ config, store, pipeline, getSourceStatus = () => 'none', log = console }) {
+export function createRelayServer({ config, store, pipeline, getSourceStatus = () => 'none', getHealth = () => ({}), log = console }) {
   const keyDigest = digest(config.relayKey);
   const authFailures = new RateLimiter({ capacity: 20, refillPerSec: 20 / 60 }); // 20 greșeli/minut per IP
 
@@ -75,6 +75,7 @@ export function createRelayServer({ config, store, pipeline, getSourceStatus = (
           stats: pipeline.stats,
           requireVerification: config.requireVerification,
           verifiedAccounts: Object.keys(pipeline.verifier.byRoblox).length,
+          ...getHealth(),
         });
       }
 

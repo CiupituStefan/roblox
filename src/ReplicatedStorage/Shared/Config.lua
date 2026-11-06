@@ -256,7 +256,7 @@ Config.Bridge = {
 	-- URL-ul public HTTPS al relay-ului (Cloudflare Tunnel / hosting), FĂRĂ "/" la final
 	BaseUrl = "https://YOUR-RELAY-DOMAIN.example.com",
 	PollIntervalSeconds = 1.0, -- HttpService permite max 500 cereri/minut; 1s = 60/min
-	BatchLimit = 100, -- câte evenimente pe cerere
+	BatchLimit = 200, -- câte evenimente pe cerere (maxim 200; cu rafale => până la ~1300 evenimente/s)
 	SecretName = "TIKTOK_RELAY_KEY", -- numele secretului din Roblox Secrets Store
 	FailureBackoff = { 1, 2, 4, 8, 15, 30 }, -- secunde de așteptare după erori consecutive
 	DedupeMemory = 3000, -- câte ID-uri de evenimente procesate ținem minte
@@ -290,6 +290,8 @@ Config.Debug = {
 	-- Etapa 2: pornește o „cursă de test” în Studio (fără mișcare) ca să poți testa
 	-- gift-urile din simulator. Va fi înlocuită de RaceService în Etapa 5.
 	ForceMap = nil, -- ex. "NeonCity": cursele folosesc mereu această hartă (teste)
+	AllowLoadTestLive = false, -- testul de încărcare din panoul de admin merge doar în Studio, dacă e false
+	HealthLogMinutes = 5, -- la câte minute scrie serverul o linie de sănătate în Output
 }
 
 return Config

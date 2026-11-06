@@ -113,7 +113,9 @@ ServerScriptService
    │  ├─ RacerController      mișcare pe spline, clasament, finish   [Etapa 5 ✔]
    │  ├─ BoostService         aplicare boost-uri, cooldown, coadă    [Etapa 6 ✔]
    │  ├─ SettingsService      listă albă setări + salvare DataStore  [Etapa 8 ✔]
-   │  └─ AdminService         comenzi admin validate pe server       [Etapa 8 ✔]
+   │  ├─ AdminService         comenzi admin validate pe server       [Etapa 8 ✔]
+   │  ├─ HealthMonitor        FPS, memorie, watchdog pe faze         [Etapa 9 ✔]
+   │  └─ LoadTester           test de încărcare din panou (Studio)   [Etapa 9 ✔]
    └─ Tests/
       ├─ QueueService.spec    ModuleScript  teste automate           [Etapa 1 ✔]
       ├─ GiftRouter.spec      ModuleScript  teste donații            [Etapa 2 ✔]
@@ -148,6 +150,8 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 ├─ src/verify.js        verificare opțională TikTok ↔ Roblox
 ├─ src/sources/         tikfinity.js | connector.js
 ├─ src/sim.js           simulator evenimente
+├─ src/supervise.js     repornire automată (npm run start:live)
+├─ scripts/loadtest.js  test de încărcare (npm run loadtest)
 ├─ test/relay.test.js   10 teste (npm test)
 └─ .env.example         RELAY_KEY, SOURCE, ...
 ```
@@ -164,7 +168,7 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 | **6** | **Boost-uri + aura în 4 niveluri + VFX + sunete ✔** | Gift → boost doar pentru propriul personaj |
 | **7** | **UI vertical 9:16 + camera de transmisie ✔** | Lizibil pe telefon |
 | **8** | **Panou de administrare ✔** | Toate controalele din cerință |
-| 9 | Rezistență: test de încărcare (50 de concurenți, 20 de gift-uri/s), LIVE de mai multe ore | Fără scurgeri de memorie, reconectare relay |
+| **9** | **Rezistență: test de încărcare, watchdog, LIVE de mai multe ore ✔** | Fără scurgeri de memorie, reconectare relay, ghid `docs/GHID_LIVE.md` |
 
 ## 7. Rularea în timpul LIVE-ului
 * Testezi în **Studio** (Play). Pentru LIVE folosești jocul **publicat**, pe un **server privat**, ca să fii singurul jucător. Clientul tău Roblox este „camera” pe care o transmiți (OBS / TikTok LIVE Studio, captură 9:16).

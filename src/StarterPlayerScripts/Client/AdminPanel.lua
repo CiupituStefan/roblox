@@ -221,20 +221,48 @@ TAB["Control"] = function(s)
 		tostring(s.bridge or "?"), s.registrationOpen and "deschise" or "ÎNCHISE", s.queue.queuedTotal or 0)
 	local frame = rowFrame(64)
 	label(frame, info, { Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 1, -8), TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, TextTruncate = Enum.TextTruncate.None })
+	if s.health then
+		local h = s.health
+		local healthFrame = rowFrame(46)
+		label(healthFrame, string.format("Server: FPS %d (cel mai lent cadru %d ms) · memorie %d MB · pornit de %d min\nCurse terminate %d · anulate %d · intervenții watchdog %d",
+			h.fps, h.worstFrameMs, h.memoryMb, h.uptimeMin, s.raceStats.racesCompleted, s.raceStats.racesAborted, h.watchdogActions),
+			{ Position = UDim2.fromOffset(10, 2), Size = UDim2.new(1, -20, 1, -4), TextWrapped = true, TextTruncate = Enum.TextTruncate.None, TextColor3 = h.fps < 40 and RED or Color3.new(1, 1, 1) })
+	end
 	header("Curse")
 	buttonsRow({
 		{ "▶ Pornește", GREEN, function() send("race.start") end },
 		{ "■ Oprește", RED, function() send("race.stop") end },
+		{ "↻ Repornește ciclul", ACCENT, function() send("race.restart") end },
 	})
 	buttonsRow({
 		{ "⏸ Pauză", ACCENT, function() send("race.pause") end },
 		{ "⏵ Reia", ACCENT, function() send("race.resume") end },
 		{ "✖ Anulează cursa", RED, function() send("race.abort") end },
 	})
+	header("Relay TikTok (adresa HTTPS)")
+	local urlBox = inputRow(tostring(s.bridgeUrl or "https://..."), {
+		{ "Salvează", GREEN, function(text)
+			send("set", { path = "Bridge.BaseUrl", value = text })
+		end },
+	})
+	urlBox.Text = tostring(s.bridgeUrl or "")
 	header("Înscrieri")
 	toggleRow("Înscrieri deschise", s.registrationOpen, function(v)
 		send("queue.registration", { open = v })
 	end)
+	header("Test de încărcare" .. (s.isStudio and "" or " (doar în Studio)"))
+	buttonsRow({
+		{ s.loadTestRunning and "Rulează..." or "12 concurenți · 10 gift/s", ACCENT, function()
+			send("debug.loadtest", { racers = 12, giftsPerSecond = 10, seconds = 30 })
+		end },
+		{ s.loadTestRunning and "Rulează..." or "40 concurenți · 30 gift/s", RED, function()
+			send("debug.loadtest", { racers = 40, giftsPerSecond = 30, seconds = 45 })
+		end },
+	})
+	if s.lastLoadTest then
+		local reportFrame = rowFrame(70)
+		label(reportFrame, s.lastLoadTest, { Position = UDim2.fromOffset(10, 2), Size = UDim2.new(1, -20, 1, -4), TextWrapped = true, TextTruncate = Enum.TextTruncate.None, TextSize = 12 })
+	end
 	header("Setări salvate")
 	buttonsRow({
 		{ string.format("Șterge setările salvate (%d)", s.savedCount or 0), RED, function() send("settings.reset") end },

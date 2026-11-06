@@ -8,6 +8,24 @@ import { startTikfinity } from './sources/tikfinity.js';
 import { startConnector } from './sources/connector.js';
 
 const log = console;
+const startedAt = Date.now();
+let store = null; // setat mai jos; folosit și la salvarea de urgență
+
+// O eroare neprevăzută într-un callback nu trebuie să oprească relay-ul în mijlocul LIVE-ului.
+process.on('unhandledRejection', (reason) => {
+  log.error(`[relay] promisiune respinsă netratată: ${reason?.stack ?? reason}`);
+});
+process.on('uncaughtException', (err) => {
+  log.error(`[relay] eroare fatală: ${err?.stack ?? err}`);
+  // starea poate fi coruptă: salvăm și ieșim; supervizorul (npm run start:live) repornește
+  try {
+    store?.flush();
+  } catch {
+    /* ignorat */
+  }
+  process.exit(1);
+});
+
 const config = loadConfig();
 try {
   assertConfig(config);
@@ -16,7 +34,7 @@ try {
   process.exit(1);
 }
 
-const store = new EventStore(config);
+store = new EventStore(config);
 const verifier = new Verifier({ config });
 const pipeline = new Pipeline({ config, store, verifier, log });
 
@@ -47,6 +65,10 @@ const server = createRelayServer({
   store,
   pipeline,
   getSourceStatus: () => `${source.name}:${source.status()}`,
+  getHealth: () => ({
+    uptimeSec: Math.round((Date.now() - startedAt) / 1000),
+    memoryMb: Math.round(process.memoryUsage().rss / 1048576),
+  }),
   log,
 });
 
@@ -56,6 +78,12 @@ server.listen(config.port, () => {
 });
 
 const cleanupTimer = setInterval(() => pipeline.cleanup(), 60000);
+// linie de sănătate în consolă la fiecare 10 minute
+const healthTimer = setInterval(() => {
+  const mem = Math.round(process.memoryUsage().rss / 1048576);
+  log.info(`[relay] sănătate: sursă ${source.name}:${source.status()}, evenimente ${store.lastSeq}, confirmate ${store.lastAcked}, memorie ${mem} MB, ignorate ${pipeline.stats.dropped}`);
+}, 10 * 60 * 1000);
+healthTimer.unref();
 cleanupTimer.unref();
 
 const shutdown = () => {

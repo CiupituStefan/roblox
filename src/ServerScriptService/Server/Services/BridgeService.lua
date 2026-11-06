@@ -180,16 +180,20 @@ function BridgeService:Start()
 	end
 
 	self._running = true
+	self._generation = (self._generation or 0) + 1
+	local generation = self._generation
 	self:_setStatus("connecting")
 	task.spawn(function()
-		while self._running do
+		while self._running and self._generation == generation do
 			local ok, countOrCode, detail = self:_pollOnce(auth)
 			if ok then
 				self._failures = 0
 				self:_setStatus("connected", detail and ("sursă " .. tostring(detail)) or nil)
 				ReplicatedStorage:SetAttribute("BridgeSource", tostring(detail))
 				if countOrCode >= cfg.BatchLimit then
-					task.wait(0.1) -- mai sunt evenimente: continuăm imediat
+					-- mai sunt evenimente: continuăm repede, dar sub limita Roblox de
+					-- 500 cereri HTTP/minut (0.15s => max ~400/minut)
+					task.wait(0.15)
 				else
 					task.wait(cfg.PollIntervalSeconds)
 				end
@@ -206,7 +210,16 @@ end
 
 function BridgeService:Stop()
 	self._running = false
+	self._generation = (self._generation or 0) + 1
 	self:_setStatus("stopped")
+end
+
+-- Repornire (ex. adresa relay-ului a fost schimbată din panoul de admin).
+-- Cursorul se păstrează: nu se pierd și nu se dublează evenimente.
+function BridgeService:Restart()
+	self:Stop()
+	self._failures = 0
+	self:Start()
 end
 
 return BridgeService

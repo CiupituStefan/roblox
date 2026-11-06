@@ -13,6 +13,7 @@
 	Etapa 6: BoostService (cooldown + coadă) + efecte/aură/sunete pe client
 	Etapa 7: HUD + regizorul camerei (client)
 	Etapa 8: SettingsService (listă albă + salvare) + AdminService + panou admin
+	Etapa 9: HealthMonitor (watchdog, FPS, memorie) + LoadTester + curățare periodică
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -40,6 +41,8 @@ local RaceService = require(Services:WaitForChild("RaceService"))
 local BoostService = require(Services:WaitForChild("BoostService"))
 local SettingsService = require(Services:WaitForChild("SettingsService"))
 local AdminService = require(Services:WaitForChild("AdminService"))
+local HealthMonitor = require(Services:WaitForChild("HealthMonitor"))
+local LoadTester = require(Services:WaitForChild("LoadTester"))
 
 local Players = game:GetService("Players")
 -- Streamerul nu are personaj: clientul lui este doar camera transmisă pe TikTok.
@@ -215,10 +218,12 @@ registration.Processed:Connect(function(result)
 	end
 end)
 
+-- curățare periodică (LIVE-uri de mai multe ore: memoria nu trebuie să crească)
 task.spawn(function()
 	while true do
 		task.wait(60)
 		registration:Cleanup()
+		RobloxUserService.Prune(2000)
 	end
 end)
 
@@ -373,6 +378,12 @@ local bridge = BridgeService.new({
 })
 App.Bridge = bridge
 bridge:Start()
+settings.Changed:Connect(function(path)
+	if path == "Bridge.BaseUrl" then
+		print("[Main] Adresa relay-ului s-a schimbat, repornesc bridge-ul")
+		bridge:Restart()
+	end
+end)
 
 ---------------------------------------------------------------------------
 -- 6) Simulare în Studio (fără TikTok)
@@ -445,6 +456,22 @@ end)
 ---------------------------------------------------------------------------
 -- 9) Panoul de administrare
 ---------------------------------------------------------------------------
+local health = HealthMonitor.new({
+	config = Config,
+	raceState = raceState,
+	race = raceService,
+	log = print,
+})
+health:Start()
+local loadTester = LoadTester.new({
+	config = Config,
+	queue = queue,
+	giftRouter = giftRouter,
+	raceState = raceState,
+	boosts = boosts,
+	log = print,
+})
+
 local admin = AdminService.new({
 	config = Config,
 	remotes = Remotes,
@@ -453,9 +480,18 @@ local admin = AdminService.new({
 	race = raceService,
 	maps = maps,
 	settings = settings,
+	health = health,
+	loadTester = loadTester,
 	log = print,
 })
 admin:Start()
+App.Health = health
+
+-- la oprirea serverului: salvează setările și oprește cursele curat
+game:BindToClose(function()
+	settings:SaveNow()
+	raceService:Stop()
+end)
 App.Settings = settings
 App.Admin = admin
 
@@ -463,4 +499,4 @@ if Config.Race.AutoLoop then
 	raceService:Start()
 end
 
-log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate), 6 (Boost-uri + Aură), 7 (HUD), 8 (Admin). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())
+log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate), 6 (Boost-uri + Aură), 7 (HUD), 8 (Admin), 9 (Watchdog + Test încărcare). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())

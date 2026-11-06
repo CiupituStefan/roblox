@@ -30,6 +30,7 @@ local function makeConfig()
 		Aura = { Enabled = true, BaseSize = 3 },
 		UI = { ShotSeconds = 7, FocusSeconds = 3 },
 		Admin = { UserIds = { 1 } },
+		Bridge = { BaseUrl = "https://old.example.com" },
 	}
 end
 
@@ -96,6 +97,16 @@ tests["MinRacers <= MaxRacers"] = function(check)
 	s:Set("Race.MinRacers", 6)
 	s:Set("Race.MaxRacers", 4)
 	check(config.Race.MinRacers == 4, "MinRacers coborât automat la noul MaxRacers")
+end
+
+tests["Adresa relay-ului: doar https, fără cale"] = function(check)
+	local s, config = make()
+	check(s:Set("Bridge.BaseUrl", " https://abc-def.trycloudflare.com/ ") and config.Bridge.BaseUrl == "https://abc-def.trycloudflare.com", "tunel valid (curățat)")
+	check(s:Set("Bridge.BaseUrl", "https://relay.domeniul-meu.ro:8443"), "cu port")
+	check(not s:Set("Bridge.BaseUrl", "http://abc.com"), "http respins")
+	check(not s:Set("Bridge.BaseUrl", "https://abc.com/events?x=1"), "cu cale respins")
+	check(not s:Set("Bridge.BaseUrl", "https://localhost"), "fără domeniu respins")
+	check(not s:Set("Bridge.BaseUrl", 42), "număr respins")
 end
 
 function Spec.run()

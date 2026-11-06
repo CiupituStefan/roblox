@@ -64,9 +64,16 @@ function RaceService:Start()
 	end
 	self._running = true
 	self._abort = false
+	-- fiecare buclă are o „generație”; Restart pornește una nouă, iar cea veche
+	-- (chiar dacă era blocată într-o așteptare) se oprește singură când revine
+	self._generation = (self._generation or 0) + 1
+	local generation = self._generation
 	task.spawn(function()
-		while self._running do
-			local ok, err = pcall(self._runOneAsync, self)
+		while self._running and self._generation == generation do
+			local ok, err = pcall(self._runOneAsync, self, generation)
+			if self._generation ~= generation then
+				return -- între timp s-a făcut Restart
+			end
 			if not ok then
 				warn("[RaceService] Eroare în cursă:", err)
 				self:_emergencyCleanup()
@@ -75,6 +82,20 @@ function RaceService:Start()
 			task.wait(1)
 		end
 	end)
+end
+
+-- Repornire forțată (watchdog / admin): curăță tot și pornește o buclă nouă.
+function RaceService:Restart()
+	warn("[RaceService] Repornire forțată a ciclului de curse")
+	self._running = false
+	self._generation = (self._generation or 0) + 1
+	self:_emergencyCleanup()
+	self._abort = false
+	self:Start()
+end
+
+function RaceService:GetStats()
+	return { racesCompleted = self._racesCompleted or 0, racesAborted = self._racesAborted or 0 }
 end
 
 -- Oprește ciclul (cursa curentă este anulată curat).
@@ -118,10 +139,14 @@ end
 -- Utilitare
 ---------------------------------------------------------------------------
 -- Așteaptă `seconds` (timpul de pauză nu se pune). false dacă s-a cerut anularea.
-function RaceService:_wait(seconds)
+function RaceService:_isStale(generation)
+	return generation ~= nil and generation ~= self._generation
+end
+
+function RaceService:_wait(seconds, generation)
 	local remaining = seconds
 	while remaining > 0 do
-		if self._abort then
+		if self._abort or self:_isStale(generation) then
 			return false
 		end
 		local dt = task.wait(0.1)
@@ -129,7 +154,7 @@ function RaceService:_wait(seconds)
 			remaining -= dt
 		end
 	end
-	return not self._abort
+	return not self._abort and not self:_isStale(generation)
 end
 
 function RaceService:_event(payload)
@@ -164,15 +189,15 @@ end
 ---------------------------------------------------------------------------
 -- 1) Așteptarea concurenților
 ---------------------------------------------------------------------------
-function RaceService:_waitForRacersAsync()
+function RaceService:_waitForRacersAsync(generation)
 	local cfg = self._config.Race
 	self._raceState:Set(P.Idle)
 	while self._running do
 		-- așteaptă minimul de concurenți (și să nu fie pauză)
-		while self._running and (self._paused or self._queue:GetQueuedCount() < cfg.MinRacers) do
+		while self._running and not self:_isStale(generation) and (self._paused or self._queue:GetQueuedCount() < cfg.MinRacers) do
 			task.wait(0.5)
 		end
-		if not self._running then
+		if not self._running or self:_isStale(generation) then
 			return false
 		end
 		-- fereastră pentru înscrieri suplimentare
@@ -180,7 +205,7 @@ function RaceService:_waitForRacersAsync()
 		self:_event({ type = "lobby", startsAt = startsAt })
 		local ready = true
 		while workspace:GetServerTimeNow() < startsAt do
-			if not self._running then
+			if not self._running or self:_isStale(generation) then
 				return false
 			end
 			if self._paused or self._queue:GetQueuedCount() < cfg.MinRacers then
@@ -203,8 +228,17 @@ end
 ---------------------------------------------------------------------------
 -- 2) O cursă completă
 ---------------------------------------------------------------------------
-function RaceService:_runOneAsync()
-	if not self:_waitForRacersAsync() then
+-- O buclă veche (după Restart) doar își șterge modelele și iese, fără să atingă starea nouă.
+function RaceService:_staleExit(current)
+	if current.connection then
+		current.connection:Disconnect()
+		current.connection = nil
+	end
+	self._preRace:Cleanup(current.handles or {})
+end
+
+function RaceService:_runOneAsync(generation)
+	if not self:_waitForRacersAsync(generation) then
 		return
 	end
 	local cfg = self._config
@@ -236,6 +270,9 @@ function RaceService:_runOneAsync()
 	while not mapResult.done do
 		task.wait(0.1)
 	end
+	if self:_isStale(generation) then
+		return self:_staleExit(current)
+	end
 	local map = mapResult.map
 	current.map = map
 	if not map then
@@ -257,6 +294,9 @@ function RaceService:_runOneAsync()
 	-- pașii 6-9: roata mount-urilor; fiecare avatar ajunge pe mount-ul lui
 	raceState:Set(P.Wheel, raceId)
 	self._preRace:RunWheelAsync(raceId, handles)
+	if self:_isStale(generation) then
+		return self:_staleExit(current)
+	end
 	if self._abort then
 		self:_finishCleanup(current)
 		return
@@ -307,7 +347,10 @@ function RaceService:_runOneAsync()
 	end
 	local holdSeconds = cfg.Race.GridHoldSeconds + cfg.Race.CountdownSeconds
 	self:_event({ type = "countdown", raceId = raceId, goAt = workspace:GetServerTimeNow() + holdSeconds, seconds = cfg.Race.CountdownSeconds })
-	if not self:_wait(holdSeconds) then
+	if not self:_wait(holdSeconds, generation) then
+		if self:_isStale(generation) then
+			return self:_staleExit(current)
+		end
 		self:_finishCleanup(current)
 		return
 	end
@@ -354,7 +397,7 @@ function RaceService:_runOneAsync()
 	end)
 
 	while true do
-		if self._abort then
+		if self._abort or self:_isStale(generation) then
 			break
 		end
 		if controller:AllFinished() then
@@ -370,6 +413,9 @@ function RaceService:_runOneAsync()
 	end
 	current.connection:Disconnect()
 	current.connection = nil
+	if self:_isStale(generation) then
+		return self:_staleExit(current)
+	end
 
 	-- pașii 16-17: fereastra de boost-uri se închide, rezultate
 	raceState:Set(P.Finished, raceId) -- închide automat fereastra de boost-uri
@@ -388,7 +434,10 @@ function RaceService:_runOneAsync()
 
 	-- podium
 	self:_showPodium(current, results)
-	self:_wait(cfg.Race.PodiumSeconds)
+	self:_wait(cfg.Race.PodiumSeconds, generation)
+	if self:_isStale(generation) then
+		return self:_staleExit(current)
+	end
 	self._staging:SetConfetti(false)
 	workspace:SetAttribute("PodiumActive", false)
 
@@ -455,7 +504,10 @@ function RaceService:_finishCleanup(current)
 	self._raceState:Set(P.Idle)
 	self._current = nil
 	if self._abort then
+		self._racesAborted = (self._racesAborted or 0) + 1
 		self:_event({ type = "aborted", raceId = current.raceId })
+	elseif current.results then
+		self._racesCompleted = (self._racesCompleted or 0) + 1
 	end
 end
 

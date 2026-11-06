@@ -111,8 +111,27 @@ end
 	entry = intrarea din QueueService (robloxUserId, robloxName, displayName)
 	Returnează Model-ul avatarului sau nil, codEroare.
 ]]
+-- Avatar generat (testul de încărcare): fără cereri la Roblox, culori aleatorii.
+local function testDescription()
+	local d = Instance.new("HumanoidDescription")
+	local rng = Random.new()
+	local color = Color3.fromHSV(rng:NextNumber(), 0.6, 0.9)
+	d.HeadColor = Color3.fromRGB(255, 220, 180)
+	d.TorsoColor = color
+	d.LeftArmColor = color
+	d.RightArmColor = color
+	d.LeftLegColor = color:Lerp(Color3.new(0, 0, 0), 0.4)
+	d.RightLegColor = color:Lerp(Color3.new(0, 0, 0), 0.4)
+	return d
+end
+
 function AvatarService:BuildAsync(entry)
-	local description, err = self._users.GetDescriptionAsync(entry.robloxUserId)
+	local description, err
+	if entry.isTest then
+		description = testDescription()
+	else
+		description, err = self._users.GetDescriptionAsync(entry.robloxUserId)
+	end
 	if not description then
 		return nil, err
 	end

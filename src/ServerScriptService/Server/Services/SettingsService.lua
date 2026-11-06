@@ -61,6 +61,9 @@ SettingsService.Rules = {
 	["Aura.BaseSize"] = num(0.5, 10),
 	["UI.ShotSeconds"] = num(2, 30),
 	["UI.FocusSeconds"] = num(0, 10),
+	-- adresa relay-ului (ex. tunel Cloudflare nou). Cheia secretă e trimisă de Roblox
+	-- DOAR către domeniul permis în Secrets Store, deci o adresă greșită nu o expune.
+	["Bridge.BaseUrl"] = { kind = "url" },
 }
 
 -- Câmpurile modificabile ale boost-urilor (doar dacă boost-ul are deja câmpul)
@@ -104,6 +107,15 @@ local function checkRule(rule, value)
 	elseif rule.kind == "boolean" then
 		if type(value) ~= "boolean" then
 			return nil, "trebuie să fie da/nu"
+		end
+		return value
+	elseif rule.kind == "url" then
+		if type(value) ~= "string" then
+			return nil, "trebuie să fie text"
+		end
+		value = value:gsub("%s", ""):gsub("/+$", "")
+		if #value > 200 or not value:match("^https://[%w%-%.]+%.[%a][%w%-]*[:%d]*$") then
+			return nil, "adresa trebuie să fie de forma https://domeniu.exemplu (fără cale)"
 		end
 		return value
 	elseif rule.kind == "enum" then
@@ -288,6 +300,19 @@ function SettingsService:_scheduleSave()
 			warn("[SettingsService] Salvarea setărilor a eșuat (în Studio activează 'Enable Studio Access to API Services'):", err)
 		end
 	end)
+end
+
+-- Salvare imediată (la oprirea serverului)
+function SettingsService:SaveNow()
+	if not self._persist then
+		return
+	end
+	local ok, err = pcall(function()
+		DataStoreService:GetDataStore(DATASTORE_NAME):SetAsync(DATASTORE_KEY, self._overrides)
+	end)
+	if not ok then
+		warn("[SettingsService] Salvarea finală a eșuat:", err)
+	end
 end
 
 -- La pornire: reîncarcă setările salvate (fiecare e validată din nou).
