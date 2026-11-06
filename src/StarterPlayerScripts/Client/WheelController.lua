@@ -21,6 +21,7 @@ local WheelController = {}
 local player = Players.LocalPlayer
 local gui, wheelHolder, spinner, card, cardImage, cardName, cardResult, strip, title
 local currentToken = 0
+local SoundPlayer = { Play = function() end } -- înlocuit la Start
 
 local FONT = Enum.Font.FredokaOne
 local BANDS = 7
@@ -224,11 +225,25 @@ local function play(payload)
 		local spins = spinTime > 1.5 and 3 or 2
 		local finalRotation = current + spins * 360 + delta
 		TweenService:Create(spinner, TweenInfo.new(spinTime, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Rotation = finalRotation }):Play()
+		-- „tic” la fiecare felie care trece prin dreptul indicatorului
+		task.spawn(function()
+			local lastSlice = math.floor(spinner.Rotation / sliceAngle)
+			local stopAt = os.clock() + spinTime
+			while os.clock() < stopAt and token == currentToken do
+				local slice = math.floor(spinner.Rotation / sliceAngle)
+				if slice ~= lastSlice then
+					lastSlice = slice
+					SoundPlayer.Play("WheelTick", 0.4)
+				end
+				task.wait()
+			end
+		end)
 
 		if not waitUntil(payload.startAt + reveal.landAt, token) then
 			return
 		end
 		cardResult.Text = string.format("%s %s!", reveal.mountIcon, reveal.mountName)
+		SoundPlayer.Play("WheelResult")
 		card.Rotation = -3
 		TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Rotation = 0 }):Play()
 		addRevealed(reveal, i)
@@ -240,7 +255,10 @@ local function play(payload)
 	end
 end
 
-function WheelController.Start()
+function WheelController.Start(soundPlayer)
+	if soundPlayer then
+		SoundPlayer = soundPlayer
+	end
 	buildGui()
 	layout()
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(layout)

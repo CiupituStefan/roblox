@@ -10,6 +10,7 @@
 	Etapa 3: AvatarService + MountFactory + PreRaceService (roata norocului)
 	Etapa 4: MapService + MapBuilder + TrackMath (6 hărți, start/finish, grilă)
 	Etapa 5: RaceService + RacerController (ciclul automat complet al curselor)
+	Etapa 6: BoostService (cooldown + coadă) + efecte/aură/sunete pe client
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,6 +35,7 @@ local StagingArea = require(Services:WaitForChild("StagingArea"))
 local PreRaceService = require(Services:WaitForChild("PreRaceService"))
 local MapService = require(Services:WaitForChild("MapService"))
 local RaceService = require(Services:WaitForChild("RaceService"))
+local BoostService = require(Services:WaitForChild("BoostService"))
 
 local Players = game:GetService("Players")
 -- Streamerul nu are personaj: clientul lui este doar camera transmisă pe TikTok.
@@ -50,7 +52,7 @@ end
 ---------------------------------------------------------------------------
 if RunService:IsStudio() and Config.Debug.RunSelfTests then
 	local tests = Server:FindFirstChild("Tests")
-	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec", "Maps.spec", "RacerController.spec" }) do
+	for _, specName in ipairs({ "QueueService.spec", "GiftRouter.spec", "Mounts.spec", "Maps.spec", "RacerController.spec", "BoostService.spec" }) do
 		local module = tests and tests:FindFirstChild(specName)
 		if module then
 			local ok, err = pcall(function()
@@ -204,39 +206,53 @@ end)
 local raceService -- creat mai jos (secțiunea 8)
 
 --[[
-	Aplicare de bază a boost-urilor pe controllerul cursei (fără efecte vizuale).
-	Etapa 6 mută această logică în BoostService (efecte, sunete, aură, cooldown).
-	Ținta este MEREU request.entry = personajul expeditorului (validat în GiftRouter).
+	BoostService aplică boost-urile DOAR cât fereastra de boost-uri este deschisă
+	pentru cursa curentă. Ținta este MEREU request.entry = personajul
+	expeditorului (validat în GiftRouter).
 ]]
-local function applyBoostBasic(request)
-	local current = raceService and raceService:GetCurrent()
-	local controller = current and current.controller
-	if not controller or current.raceId ~= request.raceId then
-		return false
-	end
-	local boost, entryId, count = request.boost, request.entry.id, request.count
-	if boost.Kind == "Multiplier" then
-		return controller:AddModifier(entryId, request.boostName, boost.Multiplier, boost.Duration * (1 + 0.5 * (count - 1)))
-	elseif boost.Kind == "Impulse" then
-		return controller:AddImpulse(entryId, boost.Distance * count, boost.ImpulseTime)
-	elseif boost.Kind == "Flight" then
-		local duration = boost.Duration * (1 + 0.5 * (count - 1))
-		controller:SetFlight(entryId, boost.FlightHeight, duration)
-		return controller:AddModifier(entryId, request.boostName, boost.Multiplier, duration)
-	end
-	return false
-end
+local boosts = BoostService.new({
+	config = Config,
+	remotes = Remotes,
+	getRace = function()
+		local current = raceService and raceService:GetCurrent()
+		if current and current.controller and raceState.boostWindowRaceId == current.raceId then
+			return current
+		end
+		return nil
+	end,
+})
+App.Boosts = boosts
 
 giftRouter.BoostRequested:Connect(function(request)
-	applyBoostBasic(request)
-	local boostName = request.boost.DisplayName or request.boostName
-	local countText = request.count > 1 and (" x" .. request.count) or ""
-	announce("boost", string.format("%s a activat %s%s pentru %s!", request.tiktokName, boostName, countText, request.entry.robloxName), {
+	local result = boosts:Request(request)
+	if result == "QUEUE_FULL" then
+		log("Coada de boost-uri plină pentru", request.entry.robloxName)
+	end
+end)
+
+boosts.Applied:Connect(function(request, fx)
+	local countText = fx.count > 1 and (" x" .. fx.count) or ""
+	announce("boost", string.format("%s a activat %s%s pentru %s!", request.tiktokName, fx.displayName, countText, request.entry.robloxName), {
 		robloxUserId = request.entry.robloxUserId,
 		boostName = request.boostName,
-		count = request.count,
+		count = fx.count,
 		giftName = request.gift.name,
 	})
+end)
+
+-- coada de boost-uri: aplicare după cooldown
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		boosts:Update()
+	end
+end)
+
+-- la ieșirea din faza de cursă nu mai rămâne nimic în așteptare
+raceState.Changed:Connect(function(phase)
+	if phase ~= RaceState.Phases.Racing and phase ~= RaceState.Phases.Countdown then
+		boosts:Reset()
+	end
 end)
 
 local SKIP_TEXT = {
@@ -408,4 +424,4 @@ if Config.Race.AutoLoop then
 	raceService:Start()
 end
 
-log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())
+log("Server pornit. Etape active: 1 (Queue), 2 (Bridge + Gift-uri), 3 (Avatar + Mount-uri + Roată), 4 (Hărți), 5 (Curse automate), 6 (Boost-uri + Aură). Bridge:", bridge:GetStatus(), "| în coadă:", App.Queue:GetQueuedCount())

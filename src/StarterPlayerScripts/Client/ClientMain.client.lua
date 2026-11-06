@@ -8,6 +8,7 @@
 	Etapa 3: animații mount + roata norocului.
 	Etapa 4: cameră care urmărește liderul pe traseu (sau lobby-ul între curse).
 	Etapa 5: countdown / finish / podium (RaceUI) + camera pe faze.
+	Etapa 6: aura (AuraRenderer), efectele boost-urilor (BoostFxRenderer), sunete.
 	Etapa 7 va adăuga HUD-ul complet și regizorul de cameră.
 ]]
 
@@ -19,10 +20,15 @@ local Client = script.Parent
 local MountAnimator = require(Client:WaitForChild("MountAnimator"))
 local WheelController = require(Client:WaitForChild("WheelController"))
 local RaceUI = require(Client:WaitForChild("RaceUI"))
+local SoundPlayer = require(Client:WaitForChild("SoundPlayer"))
+local AuraRenderer = require(Client:WaitForChild("AuraRenderer"))
+local BoostFxRenderer = require(Client:WaitForChild("BoostFxRenderer"))
 
 MountAnimator.Start()
-WheelController.Start()
-RaceUI.Start()
+WheelController.Start(SoundPlayer)
+RaceUI.Start(SoundPlayer)
+AuraRenderer.Start(SoundPlayer)
+BoostFxRenderer.Start(SoundPlayer)
 
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer

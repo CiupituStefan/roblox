@@ -77,8 +77,7 @@ ReplicatedStorage
 │  ├─ Signal            ModuleScript  evenimente interne              [Etapa 1 ✔]
 │  ├─ Validation        ModuleScript  validare username/ID/text       [Etapa 1 ✔]
 │  ├─ Remotes           ModuleScript  creează/găsește remotes         [Etapa 1 ✔]
-│  ├─ TrackMath         ModuleScript  spline, distanță → CFrame       [Etapa 4 ✔]
-│  └─ AuraMath          ModuleScript  nivel aură după viteză          [Etapa 6]
+│  └─ TrackMath         ModuleScript  spline, distanță → CFrame       [Etapa 4 ✔]
 ├─ Remotes/             (Folder, creat automat de server)
 └─ Assets/
    ├─ Sounds/           (Sound-uri: Boost, Turbo, Rocket, Thunder, Teleport, Start, Finish, Win...)
@@ -111,14 +110,15 @@ ServerScriptService
    │  ├─ Maps/Themes          culori, lumină, decoruri per temă      [Etapa 4 ✔]
    │  ├─ RaceService          ciclu automat complet (23 pași)        [Etapa 5 ✔]
    │  ├─ RacerController      mișcare pe spline, clasament, finish   [Etapa 5 ✔]
-   │  ├─ BoostService         validare + aplicare boost-uri          [Etapa 6]
+   │  ├─ BoostService         aplicare boost-uri, cooldown, coadă    [Etapa 6 ✔]
    │  └─ AdminService         comenzi admin validate                 [Etapa 8]
    └─ Tests/
       ├─ QueueService.spec    ModuleScript  teste automate           [Etapa 1 ✔]
       ├─ GiftRouter.spec      ModuleScript  teste donații            [Etapa 2 ✔]
       ├─ Mounts.spec          ModuleScript  teste mount-uri          [Etapa 3 ✔]
       ├─ Maps.spec            ModuleScript  teste trasee             [Etapa 4 ✔]
-      └─ RacerController.spec ModuleScript  teste simulare cursă     [Etapa 5 ✔]
+      ├─ RacerController.spec ModuleScript  teste simulare cursă     [Etapa 5 ✔]
+      └─ BoostService.spec    ModuleScript  teste boost-uri          [Etapa 6 ✔]
    └─ LocalSecrets          ModuleScript  cheia relay doar în Studio [Etapa 2 ✔]
 
 StarterPlayer/StarterPlayerScripts/Client  (Folder)
@@ -127,8 +127,9 @@ StarterPlayer/StarterPlayerScripts/Client  (Folder)
 ├─ WheelController      ModuleScript  roata norocului (UI din cod)   [Etapa 3 ✔]
 ├─ RaceUI               ModuleScript  countdown, finish, podium      [Etapa 5 ✔]
 ├─ CameraDirector       ModuleScript  camera urmărește liderul       [Etapa 7]
-├─ AuraRenderer         ModuleScript  aura (interpolare culoare/mărime) [Etapa 6]
-└─ BoostFxRenderer      ModuleScript  efecte boost                   [Etapa 6]
+├─ AuraRenderer         ModuleScript  aura în 4 niveluri + fulgere   [Etapa 6 ✔]
+├─ BoostFxRenderer      ModuleScript  efecte boost + text plutitor   [Etapa 6 ✔]
+└─ SoundPlayer          ModuleScript  sunete (Config.Sounds)         [Etapa 6 ✔]
 
 StarterGui
 ├─ HUD                  ScreenGui     clasament, coadă, anunțuri (9:16) [Etapa 7]
@@ -158,7 +159,7 @@ relay/                  (în afara Roblox, Node.js 22, fără dependențe) [Etap
 | **3** | **Avatar R15 + 16 mount-uri procedurale + roata norocului ✔** | Avatarul original stă pe mount, cu animație |
 | **4** | **6 hărți procedurale fără obstacole + TrackMath ✔** | Traseu continuu de la start la finish, lat, cu decor doar în afara pistei |
 | **5** | **RaceService: ciclul automat complet ✔** | Curse care se repetă singure, cu clasament și podium |
-| 6 | Boost-uri + aura în 4 niveluri + VFX + sunete | Gift → boost doar pentru propriul personaj |
+| **6** | **Boost-uri + aura în 4 niveluri + VFX + sunete ✔** | Gift → boost doar pentru propriul personaj |
 | 7 | UI vertical 9:16 + camera de transmisie | Lizibil pe telefon |
 | 8 | Panou de administrare | Toate controalele din cerință |
 | 9 | Rezistență: test de încărcare (50 de concurenți, 20 de gift-uri/s), LIVE de mai multe ore | Fără scurgeri de memorie, reconectare relay |

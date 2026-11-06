@@ -117,13 +117,52 @@ Config.Gifts = {
 ---------------------------------------------------------------------------
 -- Nivelul se alege după multiplicatorul de viteză curent (viteza / BaseSpeed).
 Config.Aura = {
+	Enabled = true,
 	TransitionSpeed = 4, -- cât de repede se interpolează culoarea/mărimea (mai mare = mai rapid)
+	BaseSize = 3.2, -- mărimea particulelor de aură la nivelul „Calm” (studs)
+	BoostBonusWeight = 0.5, -- cât adaugă AuraBonus-ul unui boost activ la nivelul aurei
+	LightningColor = Color3.fromRGB(150, 220, 255),
+	-- Texturi încorporate în Roblox (nu necesită upload). Le poți înlocui cu
+	-- "rbxassetid://ID" din Creator Store pentru un stil diferit.
+	Textures = {
+		Glow = "rbxasset://textures/particles/forcefield_glow_main.dds",
+		Flame = "rbxasset://textures/particles/fire_main.dds",
+		Spark = "rbxasset://textures/particles/sparkles_main.dds",
+		Smoke = "rbxasset://textures/particles/smoke_main.dds",
+		Shockwave = "rbxasset://textures/particles/explosion01_shockwave_main.dds",
+		Burst = "rbxasset://textures/particles/explosion01_core_main.dds",
+	},
 	Tiers = {
 		{ Name = "Calm", MinMultiplier = 0, Color = Color3.fromRGB(170, 215, 255), Size = 1.0, Brightness = 1.0, Particles = 8, Lightning = false },
 		{ Name = "Energie", MinMultiplier = 1.15, Color = Color3.fromRGB(80, 170, 255), Size = 1.35, Brightness = 2.0, Particles = 25, Lightning = false },
 		{ Name = "Supernova", MinMultiplier = 1.6, Color = Color3.fromRGB(255, 215, 60), Size = 1.8, Brightness = 3.5, Particles = 55, Lightning = false },
 		{ Name = "Divin", MinMultiplier = 2.3, Color = Color3.fromRGB(255, 240, 120), Size = 2.4, Brightness = 5.0, Particles = 90, Lightning = true },
 	},
+}
+
+---------------------------------------------------------------------------
+-- SUNETE
+---------------------------------------------------------------------------
+-- Pune ID-uri de sunete din Creator Store ("rbxassetid://123456") pe care ai
+-- dreptul să le folosești. Un câmp gol = fără sunet (jocul merge oricum).
+-- Câteva sunete încorporate în Roblox ("rbxasset://sounds/...") sunt folosite implicit.
+Config.Sounds = {
+	Volume = 0.6,
+	CountdownBeep = "rbxasset://sounds/electronicpingshort.wav",
+	Go = "rbxasset://sounds/electronicpingshort.wav",
+	Finish = "",
+	Winner = "", -- fanfară / voce „Avem un câștigător!” (încărcată de tine)
+	Gift = "", -- la fiecare donație anunțată
+	WheelTick = "rbxasset://sounds/clickfast.wav",
+	WheelResult = "",
+	Boost = "rbxasset://sounds/swoosh.wav",
+	SuperBoost = "rbxasset://sounds/swoosh.wav",
+	Turbo = "rbxasset://sounds/swoosh.wav",
+	Rocket = "",
+	Jetpack = "",
+	Thunder = "",
+	Teleport = "",
+	AuraPowerUp = "", -- la trecerea în nivelul „Divin”
 }
 
 ---------------------------------------------------------------------------

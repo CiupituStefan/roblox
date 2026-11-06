@@ -25,6 +25,7 @@ local GOLD = Color3.fromRGB(255, 210, 60)
 local MEDALS = { "🥇", "🥈", "🥉" }
 
 local gui, center, subtitle, lobbyLabel, feed, results
+local SoundPlayer = { Play = function() end } -- înlocuit la Start
 local lobbyStartsAt = nil
 local token = 0
 
@@ -211,6 +212,7 @@ local function runCountdown(payload)
 			return
 		end
 		pop(center, tostring(n), n == 1 and Color3.fromRGB(255, 90, 90) or GOLD)
+		SoundPlayer.Play("CountdownBeep")
 		while workspace:GetServerTimeNow() < goAt - (n - 1) do
 			if my ~= token then
 				return
@@ -220,6 +222,7 @@ local function runCountdown(payload)
 	end
 	if my == token then
 		pop(center, "GO!", Color3.fromRGB(90, 255, 120), 1.2)
+		SoundPlayer.Play("Go", 1, 1.5)
 	end
 end
 
@@ -248,9 +251,11 @@ end
 
 function handlers.finish(payload)
 	addFeed(string.format("%s #%d %s  %s", MEDALS[payload.place] or "🏁", payload.place, payload.robloxName, formatTime(payload.time)), payload.place)
+	SoundPlayer.Play("Finish", payload.place == 1 and 1 or 0.6)
 	if payload.place == 1 then
 		token += 1
 		pop(center, "🏆 " .. payload.robloxName .. " CÂȘTIGĂ!", GOLD, 3)
+		SoundPlayer.Play("Winner")
 	end
 end
 
@@ -268,7 +273,10 @@ function handlers.aborted()
 	clearFeed()
 end
 
-function RaceUI.Start()
+function RaceUI.Start(soundPlayer)
+	if soundPlayer then
+		SoundPlayer = soundPlayer
+	end
 	build()
 	Remotes.RaceEvent.OnClientEvent:Connect(function(payload)
 		if type(payload) == "table" and handlers[payload.type] then
